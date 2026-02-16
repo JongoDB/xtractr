@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="queue.css">
+  <title>xtractr - Follow Queue</title>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-left">
+        <h1 class="logo">xtractr</h1>
+        <span class="subtitle">Follow Queue</span>
+      </div>
+      <div class="progress-text" id="progressText">0 / 0</div>
+    </header>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="empty-state">
+      <h2>No queue active</h2>
+      <p>Go to the popup, capture a following list, filter it, and send it to the follow queue.</p>
+    </div>
+
+    <!-- Queue active -->
+    <div id="queueActive" style="display:none">
+      <!-- Progress bar -->
+      <div class="queue-progress">
+        <div class="queue-progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+
+      <div class="stats-row" id="statsRow">
+        <div class="stat">
+          <span class="stat-value" id="followedCount">0</span>
+          <span class="stat-label">Followed</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="skippedCount">0</span>
+          <span class="stat-label">Skipped</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="remainingCount">0</span>
+          <span class="stat-label">Remaining</span>
+        </div>
+      </div>
+
+      <!-- Current user card -->
+      <div class="user-card" id="userCard">
+        <div class="user-card-header">
+          <img class="user-card-avatar" id="avatar" src="" alt="" onerror="this.style.visibility='hidden'">
+          <div class="user-card-names">
+            <div class="user-card-display" id="displayName"></div>
+            <div class="user-card-handle" id="handle"></div>
+          </div>
+        </div>
+        <div class="relevance-score" id="relevanceScore" style="display:none"></div>
+        <p class="user-card-bio" id="bio"></p>
+        <div class="matched-keywords" id="matchedKeywords" style="display:none"></div>
+        <div class="user-card-stats">
+          <span><strong id="cardFollowers">0</strong> followers</span>
+          <span><strong id="cardFollowing">0</strong> following</span>
+          <span id="cardLocation"></span>
+        </div>
+        <div class="user-card-actions">
+          <button class="btn primary large" id="followBtn">Open Profile &amp; Follow</button>
+          <button class="btn large" id="skipBtn">Skip</button>
+        </div>
+      </div>
+
+      <!-- Done state -->
+      <div class="done-state" id="doneState" style="display:none">
+        <h2>All done!</h2>
+        <p id="doneSummary"></p>
+        <button class="btn" id="clearQueueBtn">Clear Queue</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="queue.js"></script>
+</body>
+</html>

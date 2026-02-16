@@ -1,0 +1,265 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #15202b;
+  color: #e7e9ea;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #38444d;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: #8899a6;
+}
+
+.progress-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #8899a6;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #8899a6;
+}
+
+.empty-state h2 {
+  font-size: 20px;
+  color: #e7e9ea;
+  margin-bottom: 8px;
+}
+
+/* Progress */
+.queue-progress {
+  height: 4px;
+  background: #38444d;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.queue-progress-bar {
+  height: 100%;
+  background: #1d9bf0;
+  transition: width 0.3s;
+  border-radius: 2px;
+}
+
+/* Stats row */
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 24px;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-value {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #8899a6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* User card */
+.user-card {
+  background: #192734;
+  border: 1px solid #38444d;
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.user-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.user-card-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #38444d;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.user-card-names {
+  min-width: 0;
+}
+
+.user-card-display {
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-card-handle {
+  font-size: 15px;
+  color: #8899a6;
+}
+
+/* Relevance score badge */
+.relevance-score {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.relevance-score.high {
+  background: rgba(0, 186, 124, 0.15);
+  color: #00ba7c;
+}
+
+.relevance-score.med {
+  background: rgba(29, 155, 240, 0.15);
+  color: #1d9bf0;
+}
+
+.relevance-score.low {
+  background: rgba(255, 212, 0, 0.15);
+  color: #ffd400;
+}
+
+.user-card-bio {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 12px;
+  color: #d9d9d9;
+}
+
+/* Matched keyword tags */
+.matched-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.kw-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(29, 155, 240, 0.12);
+  color: #1d9bf0;
+  font-weight: 600;
+}
+
+.user-card-stats {
+  display: flex;
+  gap: 16px;
+  font-size: 14px;
+  color: #8899a6;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.user-card-stats strong {
+  color: #e7e9ea;
+}
+
+.user-card-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Done state */
+.done-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.done-state h2 {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.done-state p {
+  color: #8899a6;
+  margin-bottom: 20px;
+  font-size: 15px;
+}
+
+/* Buttons */
+.btn {
+  padding: 10px 20px;
+  border-radius: 9999px;
+  border: 1px solid #38444d;
+  background: transparent;
+  color: #e7e9ea;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn.primary {
+  background: #1d9bf0;
+  border-color: #1d9bf0;
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: #1a8cd8;
+}
+
+.btn.large {
+  flex: 1;
+  padding: 14px 24px;
+  font-size: 16px;
+}

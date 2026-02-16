@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="popup.css">
+  <title>xtractr</title>
+</head>
+<body>
+  <div class="popup">
+    <header class="header">
+      <h1 class="logo">xtractr</h1>
+      <span class="version">v1.0</span>
+    </header>
+
+    <!-- No active session -->
+    <div id="inactive" class="section">
+      <p class="hint">Navigate to a followers or following page on X to start capturing data.</p>
+    </div>
+
+    <!-- Active session -->
+    <div id="active" class="section" style="display:none">
+      <div class="session-info">
+        <div class="session-meta">
+          <span class="username" id="username"></span>
+          <span class="badge" id="listType"></span>
+        </div>
+        <div class="count" id="count">0</div>
+        <div class="label" id="countLabel">users captured</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="scrollBtn">Fetch All</button>
+        <button class="btn" id="csvBtn">Export CSV</button>
+        <button class="btn" id="jsonBtn">Export JSON</button>
+      </div>
+
+      <!-- Filter section -->
+      <div class="filter-section">
+        <button class="filter-toggle" id="filterToggle">Filter before export...</button>
+        <div class="filter-panel" id="filterPanel" style="display:none">
+          <!-- Keyword presets -->
+          <div class="filter-group">
+            <label class="filter-label">Quick presets</label>
+            <div class="preset-chips" id="presetChips">
+              <button class="chip active" data-preset="IT / Tech">IT / Tech</button>
+              <button class="chip" data-preset="Cybersecurity">Cybersecurity</button>
+              <button class="chip" data-preset="Data / Analytics">Data</button>
+              <button class="chip" data-preset="Design / UX">Design</button>
+            </div>
+          </div>
+
+          <!-- Custom keywords -->
+          <div class="filter-group">
+            <label class="filter-label" for="keywords">Keywords <span class="hint-inline">(comma-separated, matches bio + name)</span></label>
+            <input type="text" id="keywords" class="filter-input" placeholder="e.g. devops, kubernetes, cloud">
+          </div>
+
+          <!-- Follower range -->
+          <div class="filter-row">
+            <div class="filter-group half">
+              <label class="filter-label" for="minFollowers">Min followers</label>
+              <input type="number" id="minFollowers" class="filter-input" placeholder="0">
+            </div>
+            <div class="filter-group half">
+              <label class="filter-label" for="maxFollowers">Max followers</label>
+              <input type="number" id="maxFollowers" class="filter-input" placeholder="Any">
+            </div>
+          </div>
+
+          <!-- Toggles -->
+          <div class="filter-row toggles">
+            <label class="toggle-label">
+              <input type="checkbox" id="verifiedOnly"> Verified only
+            </label>
+            <label class="toggle-label">
+              <input type="checkbox" id="hasBio" checked> Has bio
+            </label>
+          </div>
+
+          <!-- Relevance threshold -->
+          <div class="filter-group">
+            <label class="filter-label">
+              Relevance threshold: <span id="thresholdValue">1</span>%
+            </label>
+            <input type="range" id="threshold" class="filter-range" min="1" max="75" value="1">
+            <div class="threshold-labels">
+              <span>Any match</span>
+              <span>Strong match</span>
+            </div>
+          </div>
+
+          <!-- Filter results -->
+          <div class="filter-results" id="filterResults">
+            <span id="matchCount">--</span> users match
+          </div>
+
+          <!-- Score distribution -->
+          <div class="score-buckets" id="scoreBuckets" style="display:none">
+            <span class="bucket high"><span id="highCount">0</span> strong</span>
+            <span class="bucket medium"><span id="medCount">0</span> medium</span>
+            <span class="bucket low"><span id="lowCount">0</span> low</span>
+          </div>
+
+          <!-- Top matches preview -->
+          <div class="top-matches" id="topMatches" style="display:none">
+            <label class="filter-label">Top matches</label>
+            <div id="topMatchesList"></div>
+          </div>
+
+          <!-- Filtered actions -->
+          <div class="actions">
+            <button class="btn" id="filteredCsvBtn">Export CSV</button>
+            <button class="btn" id="filteredJsonBtn">Export JSON</button>
+          </div>
+          <div class="actions" style="margin-top:6px">
+            <button class="btn primary" id="queueBtn">Send to Follow Queue</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions secondary">
+        <button class="btn small" id="saveBtn">Save List</button>
+        <button class="btn small" id="clearBtn">End Session</button>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="section">
+      <h2 class="section-title">History</h2>
+      <div id="history" class="history-list">
+        <p class="hint">No export history yet.</p>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <a href="#" id="queueLink">Follow Queue</a>
+      <span class="footer-sep">&middot;</span>
+      <a href="#" id="optionsLink">Compare Lists</a>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

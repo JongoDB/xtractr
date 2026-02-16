@@ -1,0 +1,22 @@
+/**
+ * Floating panel styles - injected into shadow DOM.
+ * See main.js createPanel() for the actual styles used.
+ * This file exists as a reference and for potential future use
+ * if the panel is refactored to use external stylesheets.
+ */
+
+.xprtr-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999999;
+  background: var(--xprtr-bg, #15202b);
+  color: var(--xprtr-text, #e7e9ea);
+  border: 1px solid var(--xprtr-border, #38444d);
+  border-radius: 16px;
+  padding: 16px;
+  min-width: 240px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}

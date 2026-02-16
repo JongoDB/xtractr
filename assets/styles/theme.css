@@ -1,0 +1,30 @@
+/**
+ * CSS custom property tokens for xprtr.
+ * Auto-detects Twitter's theme by checking body background.
+ */
+
+:root {
+  /* Default: Dim theme (matches Twitter's default dark) */
+  --xprtr-bg: #15202b;
+  --xprtr-surface: #192734;
+  --xprtr-text: #e7e9ea;
+  --xprtr-secondary: #8899a6;
+  --xprtr-border: #38444d;
+  --xprtr-accent: #1d9bf0;
+  --xprtr-accent-hover: #1a8cd8;
+  --xprtr-danger: #f4212e;
+  --xprtr-success: #00ba7c;
+  --xprtr-radius: 16px;
+  --xprtr-radius-sm: 8px;
+}
+
+/* Light theme */
+@media (prefers-color-scheme: light) {
+  :root {
+    --xprtr-bg: #ffffff;
+    --xprtr-surface: #f7f9fa;
+    --xprtr-text: #0f1419;
+    --xprtr-secondary: #536471;
+    --xprtr-border: #eff3f4;
+  }
+}

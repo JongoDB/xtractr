@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="options.css">
+  <title>xtractr - Compare Lists</title>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="logo">xtractr</h1>
+      <span class="subtitle">List Comparison</span>
+    </header>
+
+    <!-- Saved Lists -->
+    <section class="section">
+      <h2>Saved Lists</h2>
+      <div id="savedLists" class="lists-grid">
+        <p class="hint">No saved lists yet. Capture followers/following from X and save them.</p>
+      </div>
+    </section>
+
+    <!-- Compare -->
+    <section class="section" id="compareSection" style="display:none">
+      <h2>Compare</h2>
+      <div class="compare-controls">
+        <div class="select-group">
+          <label for="followersList">Followers list</label>
+          <select id="followersList"></select>
+        </div>
+        <div class="select-group">
+          <label for="followingList">Following list</label>
+          <select id="followingList"></select>
+        </div>
+        <button class="btn primary" id="compareBtn">Compare</button>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="section" id="resultsSection" style="display:none">
+      <h2>Results</h2>
+      <div class="stats-grid" id="stats"></div>
+
+      <div class="tabs" id="tabs">
+        <button class="tab active" data-tab="notFollowingBack">Don't Follow Back</button>
+        <button class="tab" data-tab="notFollowedBack">You Don't Follow Back</button>
+        <button class="tab" data-tab="mutuals">Mutuals</button>
+      </div>
+
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Search users...">
+      </div>
+
+      <div id="userList" class="user-list"></div>
+
+      <div class="export-row">
+        <button class="btn small" id="exportResultCSV">Export CSV</button>
+        <button class="btn small" id="exportResultJSON">Export JSON</button>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="section">
+      <h2>Settings</h2>
+      <div class="settings-form">
+        <div class="setting-row">
+          <label for="scrollDelay">Scroll delay (ms)</label>
+          <input type="number" id="scrollDelay" min="500" max="10000" step="500" value="2000">
+        </div>
+        <div class="setting-row">
+          <label for="staleThreshold">Stale threshold (scrolls)</label>
+          <input type="number" id="staleThreshold" min="2" max="20" value="5">
+        </div>
+        <button class="btn small" id="saveSettingsBtn">Save Settings</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
