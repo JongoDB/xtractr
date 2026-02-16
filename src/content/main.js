@@ -27,6 +27,44 @@ console.log('[xtractr] Content script loaded at', new Date().toISOString(),
   'URL:', window.location.href,
   'Detected page:', detectPage());
 
+// ---- Extension context guard ----
+// After extension reload/update, old content scripts become orphaned.
+// chrome.runtime calls will throw "Extension context invalidated".
+
+function isContextValid() {
+  try {
+    return !!chrome.runtime?.id;
+  } catch {
+    return false;
+  }
+}
+
+function cleanup() {
+  console.log('[xtractr] Extension context invalidated, cleaning up');
+  try { Paginator.stop(); } catch { /* */ }
+  try { urlObserver.disconnect(); } catch { /* */ }
+  try { hidePanel(); } catch { /* */ }
+}
+
+function safeSendMessage(message, callback) {
+  if (!isContextValid()) { cleanup(); return; }
+  try {
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        if (chrome.runtime.lastError.message?.includes('invalidated')) {
+          cleanup();
+          return;
+        }
+        console.warn('[xtractr] sendMessage error:', chrome.runtime.lastError.message);
+        return;
+      }
+      if (callback) callback(response);
+    });
+  } catch {
+    cleanup();
+  }
+}
+
 // ---- Paginator: drives cursor-based API fetching ----
 
 const Paginator = (() => {
@@ -233,14 +271,10 @@ window.addEventListener('message', (event) => {
     console.log(`[xtractr] Received intercepted data for ${listType}`);
 
     // Forward to background service worker
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'XPRTR_DATA_CAPTURED',
       payload: { listType, data, url: window.location.href },
     }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.warn('[xtractr] Error sending to background:', chrome.runtime.lastError.message);
-        return;
-      }
       console.log('[xtractr] Background response:', JSON.stringify(response));
       if (response?.count !== undefined) {
         userCount = response.count;
@@ -313,14 +347,10 @@ function onPageChange(page) {
     currentPage = page;
     console.log('[xtractr] Page changed:', page.type, '@' + page.username);
 
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       type: 'XPRTR_PAGE_CHANGED',
       payload: page,
     }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.warn('[xtractr] Error on page change:', chrome.runtime.lastError.message);
-        return;
-      }
       userCount = response?.count || 0;
       showPanel();
       updatePanel();
@@ -345,6 +375,7 @@ function onPageChange(page) {
 // Watch for URL changes
 let lastUrl = window.location.href;
 const urlObserver = new MutationObserver(() => {
+  if (!isContextValid()) { cleanup(); return; }
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     onPageChange(detectPage(lastUrl));
@@ -352,6 +383,7 @@ const urlObserver = new MutationObserver(() => {
 });
 
 window.addEventListener('popstate', () => {
+  if (!isContextValid()) return;
   if (window.location.href !== lastUrl) {
     lastUrl = window.location.href;
     onPageChange(detectPage(lastUrl));
@@ -534,11 +566,11 @@ function createPanel() {
   });
 
   root.getElementById('csvBtn').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'XPRTR_EXPORT_CSV' });
+    safeSendMessage({ type: 'XPRTR_EXPORT_CSV' });
   });
 
   root.getElementById('jsonBtn').addEventListener('click', () => {
-    chrome.runtime.sendMessage({ type: 'XPRTR_EXPORT_JSON' });
+    safeSendMessage({ type: 'XPRTR_EXPORT_JSON' });
   });
 
   document.body.appendChild(shadow);
