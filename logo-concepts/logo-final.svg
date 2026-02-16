@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- xtractr logo: X with parallelogram strokes, one breaking into fragments -->
+
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#15202b"/>
+
+  <!-- BEHIND stroke (top-left to bottom-right): outlined, open bottom, breaks apart -->
+  <!-- Three-sided path: left diagonal, top edge, right diagonal — bottom left open -->
+  <path d="M 50,56 L 33,26 L 50,26 L 67,56"
+        fill="none" stroke="#e7e9ea" stroke-width="7"
+        stroke-linejoin="miter" stroke-linecap="butt"/>
+
+  <!-- Fragment 1 (largest) — outlined parallelogram shard -->
+  <polygon points="54,58 66,58 72,68 60,68" fill="#e7e9ea"/>
+  <polygon points="57,60 65,60 69,66 61,66" fill="#15202b"/>
+
+  <!-- Fragment 2 — outlined, slightly smaller -->
+  <polygon points="67,69 76,69 80,77 71,77" fill="#e7e9ea" opacity="0.9"/>
+  <polygon points="70,71 75,71 77,75 72,75" fill="#15202b" opacity="0.9"/>
+
+  <!-- Fragment 3 — outlined, smaller, fading -->
+  <polygon points="77,79 84,79 88,85 81,85" fill="#e7e9ea" opacity="0.7"/>
+  <polygon points="79,80 83,80 86,84 82,84" fill="#15202b" opacity="0.7"/>
+
+  <!-- Fragment 4 — small shard -->
+  <polygon points="86,87 91,87 93,91 88,91" fill="#e7e9ea" opacity="0.45"/>
+
+  <!-- Fragment 5 — tiny shard -->
+  <polygon points="93,94 96,94 98,96 95,96" fill="#e7e9ea" opacity="0.25"/>
+
+  <!-- Stray fragments drifting off-axis -->
+  <polygon points="73,65 78,65 80,69 75,69" fill="#e7e9ea" opacity="0.4"/>
+  <polygon points="65,73 70,73 72,77 67,77" fill="#e7e9ea" opacity="0.35"/>
+  <polygon points="84,75 87,75 88,78 85,78" fill="#e7e9ea" opacity="0.25"/>
+
+  <!-- FRONT stroke (bottom-left to top-right): solid white, skinny, intact -->
+  <polygon points="30,104 38,104 98,24 90,24" fill="#e7e9ea"/>
+</svg>
