@@ -280,7 +280,9 @@ function extractUserFromEntry(entry) {
 
   const username = findField('screen_name') || '';
   const displayName = findField('name') || '';
-  const bio = findField('description') || findField('profile_bio') || '';
+  // profile_bio can be an object {description: "..."} in newer API
+  let bioRaw = findField('description') || findField('profile_bio') || '';
+  const bio = (typeof bioRaw === 'object' && bioRaw !== null) ? (bioRaw.description || bioRaw.text || '') : (bioRaw || '');
   const followersCount = findField('followers_count') ?? findField('normal_followers_count') ?? 0;
   const followingCount = findField('friends_count') ?? 0;
   const verified = userResult.is_blue_verified || findField('verified') || false;
