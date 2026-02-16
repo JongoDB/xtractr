@@ -15,18 +15,16 @@ let _firstEntryDumped = false;
 
 function parseGraphQLResponse(json) {
   const entries = extractEntries(json);
-  if (!entries || !entries.length) {
-    console.warn('[xtractr-bg] parseGraphQLResponse: no entries found');
-    return { users: [], cursor: null };
-  }
-
-  console.log(`[xtractr-bg] Found ${entries.length} entries`);
-  console.log('[xtractr-bg] Entry IDs:', entries.map(e => e.entryId).join(', '));
 
   const users = [];
   let cursor = null;
 
-  for (const entry of entries) {
+  if (entries && entries.length) {
+    console.log(`[xtractr-bg] Found ${entries.length} entries`);
+    console.log('[xtractr-bg] Entry IDs:', entries.map(e => e.entryId).join(', '));
+  }
+
+  for (const entry of (entries || [])) {
     const entryId = entry.entryId || '';
 
     if (entryId.startsWith('user-')) {
@@ -90,6 +88,35 @@ function parseGraphQLResponse(json) {
         }
       }
     }
+  }
+
+  // Process TimelineAddToModule instructions (paginated responses).
+  // In paginated responses, entries may only contain cursor items while
+  // actual user data arrives in moduleItems of TimelineAddToModule instructions.
+  try {
+    const timeline = json?.data?.user?.result?.timeline?.timeline || json?.data?.user?.result?.timeline;
+    if (timeline?.instructions) {
+      for (const instruction of timeline.instructions) {
+        if (instruction.type === 'TimelineAddToModule' && Array.isArray(instruction.moduleItems)) {
+          console.log(`[xtractr-bg] TimelineAddToModule: ${instruction.moduleItems.length} items`);
+          for (const item of instruction.moduleItems) {
+            const user = extractUserFromEntry(item) || extractUserFromEntry(item?.item);
+            if (user) users.push(user);
+          }
+        }
+        // Fallback cursor extraction from any instruction's entries
+        if (!cursor && Array.isArray(instruction.entries)) {
+          for (const entry of instruction.entries) {
+            const eid = entry.entryId || '';
+            if (eid.startsWith('cursor-bottom-') || eid.startsWith('cursor-bottom|')) {
+              cursor = extractCursorValue(entry);
+            }
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[xtractr-bg] Error processing timeline instructions:', e.message);
   }
 
   console.log(`[xtractr-bg] Parsed ${users.length} users, cursor: ${cursor ? 'yes' : 'null'}`);

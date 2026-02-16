@@ -121,6 +121,16 @@ const Paginator = (() => {
     }, backoffMs);
   }
 
+  function onNoNewData() {
+    if (!isRunning) return;
+    consecutiveEmpty++;
+    console.log(`[xtractr] No new data from page (${consecutiveEmpty}/${MAX_EMPTY})`);
+    if (consecutiveEmpty >= MAX_EMPTY) {
+      console.log('[xtractr] Stopping: consecutive pages with no new users');
+      stop();
+    }
+  }
+
   function fetchNext() {
     if (!isRunning || isPaused) return;
 
@@ -204,7 +214,7 @@ const Paginator = (() => {
     };
   }
 
-  return { start, stop, updateCount, setCursor, onRateLimit, onFetchResult, getState };
+  return { start, stop, updateCount, setCursor, onRateLimit, onFetchResult, onNoNewData, getState };
 })();
 
 // ---- State ----
@@ -240,6 +250,11 @@ window.addEventListener('message', (event) => {
       // Store cursor from background for next pagination
       if (response?.cursor) {
         Paginator.setCursor(response.cursor);
+      }
+      // Track pages with no new users to detect end-of-list
+      if (Paginator.getState().isRunning && response?.added === 0) {
+        Paginator.onNoNewData();
+        updatePanel();
       }
     });
   }
