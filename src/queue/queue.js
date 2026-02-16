@@ -132,6 +132,9 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Hide avatar on load error (CSP-compliant alternative to inline onerror)
+$('avatar').addEventListener('error', function() { this.style.visibility = 'hidden'; });
+
 function esc(s) {
   if (!s) return '';
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

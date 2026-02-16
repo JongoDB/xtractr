@@ -304,10 +304,10 @@ async function updateScrollButton() {
       $('scrollBtn').textContent = 'Stop (paused)';
       $('scrollBtn').classList.remove('primary');
     } else if (state?.isRunning) {
-      $('scrollBtn').textContent = 'Stop Fetching';
+      $('scrollBtn').textContent = 'Stop';
       $('scrollBtn').classList.remove('primary');
     } else {
-      $('scrollBtn').textContent = state?.hasCursor ? 'Fetch More' : 'Fetch All';
+      $('scrollBtn').textContent = state?.hasCursor ? 'Fetch' : 'Fetch All';
       $('scrollBtn').classList.add('primary');
     }
   } catch { /* content script not available */ }

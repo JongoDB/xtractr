@@ -641,7 +641,7 @@ function updatePanel() {
       fetchBtn.textContent = 'Stop';
       fetchBtn.classList.remove('primary');
     } else {
-      fetchBtn.textContent = state.hasCursor ? 'Fetch More' : 'Fetch All';
+      fetchBtn.textContent = state.hasCursor ? 'Fetch' : 'Fetch All';
       fetchBtn.classList.add('primary');
     }
   }
