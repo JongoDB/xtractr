@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>xtractr - Privacy Policy</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #fafafa; line-height: 1.7; }
+    .container { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .updated { color: #666; font-size: 14px; margin-bottom: 36px; }
+    h2 { font-size: 20px; margin: 32px 0 12px; }
+    p, li { font-size: 16px; margin-bottom: 12px; }
+    ul { padding-left: 24px; margin-bottom: 16px; }
+    a { color: #1d9bf0; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .back { display: inline-block; margin-bottom: 24px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="index.html">&larr; Back to xtractr</a>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: February 16, 2026</p>
+
+    <h2>Overview</h2>
+    <p>xtractr is a Chrome extension that exports X/Twitter followers and following lists to CSV or JSON. It is designed with privacy as a core principle: all data stays on your machine, and nothing is ever sent to external servers.</p>
+
+    <h2>Data collection</h2>
+    <p>xtractr does <strong>not</strong> collect, transmit, or share any personal data. Specifically:</p>
+    <ul>
+      <li>No data is sent to any server owned or operated by xtractr or any third party.</li>
+      <li>No analytics, telemetry, or tracking of any kind is included.</li>
+      <li>No cookies are set by the extension.</li>
+      <li>No user accounts or registration are required.</li>
+    </ul>
+
+    <h2>Data storage</h2>
+    <p>All data captured by xtractr (follower/following lists, saved lists, follow queue state, and settings) is stored locally in your browser using Chrome's <code>chrome.storage.local</code> API. This data:</p>
+    <ul>
+      <li>Never leaves your browser.</li>
+      <li>Is only accessible to the xtractr extension.</li>
+      <li>Can be cleared at any time by removing the extension or clearing extension data in Chrome settings.</li>
+    </ul>
+
+    <h2>Network activity</h2>
+    <p>xtractr does not make any network requests of its own. It reads data from X/Twitter API responses that your browser already makes when you visit followers or following pages. The extension does not modify, redirect, or inject any network requests beyond what the X/Twitter website itself initiates.</p>
+
+    <h2>Permissions</h2>
+    <p>The extension requests the following Chrome permissions:</p>
+    <ul>
+      <li><strong>storage</strong> — Save captured data and user settings locally in the browser.</li>
+      <li><strong>downloads</strong> — Export CSV and JSON files to your machine when you click an export button.</li>
+      <li><strong>activeTab</strong> — Detect whether the current tab is on a followers or following page.</li>
+      <li><strong>tabs</strong> — Open new tabs for the follow queue page and user profile links.</li>
+      <li><strong>Host permissions (x.com, twitter.com)</strong> — Inject content scripts that read API responses on X/Twitter pages.</li>
+    </ul>
+
+    <h2>Third-party services</h2>
+    <p>xtractr does not integrate with, send data to, or receive data from any third-party services, APIs, or analytics platforms.</p>
+
+    <h2>Children's privacy</h2>
+    <p>xtractr is not directed at children under 13 and does not knowingly collect any information from children.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If this privacy policy is updated, the changes will be posted on this page with an updated revision date.</p>
+
+    <h2>Contact</h2>
+    <p>For questions about this privacy policy, open an issue on the <a href="https://github.com/JongoDB/xtractr">GitHub repository</a>.</p>
+  </div>
+</body>
+</html>
