@@ -1,6 +1,5 @@
 /**
- * Capture screenshots of the extension UI for Chrome Web Store listing.
- * Run: node scripts/screenshots.mjs
+ * Capture 1280x800 screenshots for Chrome Web Store listing.
  */
 
 import { chromium } from '@playwright/test';
@@ -10,9 +9,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const OUT = path.join(ROOT, 'docs', 'screenshots');
+const OUT = '/home/kasm-user/Downloads/store-screenshots';
 
-// Mock data (same as test helpers)
 const MOCK_USERS = Array.from({ length: 10 }, (_, i) => ({
   userId: `${1000 + i}`,
   username: `user${i}`,
@@ -66,19 +64,21 @@ async function main() {
 
   const context = await chromium.launchPersistentContext('', {
     headless: false,
+    viewport: { width: 1280, height: 800 },
     args: [
       `--disable-extensions-except=${ROOT}`,
       `--load-extension=${ROOT}`,
       '--no-sandbox',
+      '--window-size=1280,800',
     ],
   });
 
   const extensionId = await getExtensionId(context);
   console.log('Extension ID:', extensionId);
 
-  // --- Screenshot 1: Popup with active session ---
+  // --- Screenshot 1: Popup ---
   const session = {
-    id: `screenshot-${Date.now()}`,
+    id: `ss-${Date.now()}`,
     username: 'elonmusk',
     type: 'following',
     users: MOCK_USERS,
@@ -89,12 +89,13 @@ async function main() {
   await seedStorage(context, extensionId, { currentSession: session });
 
   const popup = await context.newPage();
+  await popup.setViewportSize({ width: 1280, height: 800 });
   await popup.goto(`chrome-extension://${extensionId}/src/popup/popup.html`);
   await popup.waitForLoadState('domcontentloaded');
   await popup.locator('#active').waitFor({ state: 'visible', timeout: 5000 });
   await popup.waitForTimeout(300);
-  await popup.screenshot({ path: path.join(OUT, 'popup-active.png') });
-  console.log('Captured: popup-active.png');
+  await popup.screenshot({ path: path.join(OUT, '1-popup.png'), type: 'png' });
+  console.log('Captured: 1-popup.png');
 
   // Expand filter panel and activate some presets
   await popup.click('#filterToggle');
@@ -102,11 +103,11 @@ async function main() {
   await popup.click('.chip[data-preset="Tech"]');
   await popup.click('.chip[data-preset="Security"]');
   await popup.waitForTimeout(500);
-  await popup.screenshot({ path: path.join(OUT, 'popup-filters.png') });
-  console.log('Captured: popup-filters.png');
+  await popup.screenshot({ path: path.join(OUT, '4-popup-filters.png'), type: 'png' });
+  console.log('Captured: 4-popup-filters.png');
   await popup.close();
 
-  // --- Screenshot 2: Follow queue with user card ---
+  // --- Screenshot 2: Follow Queue ---
   await seedStorage(context, extensionId, {
     followQueue: {
       users: MOCK_USERS.slice(0, 5).map((u, i) => ({
@@ -126,15 +127,16 @@ async function main() {
   });
 
   const queue = await context.newPage();
+  await queue.setViewportSize({ width: 1280, height: 800 });
   await queue.goto(`chrome-extension://${extensionId}/src/queue/queue.html`);
   await queue.waitForLoadState('domcontentloaded');
   await queue.locator('#queueActive').waitFor({ state: 'visible', timeout: 5000 });
   await queue.waitForTimeout(300);
-  await queue.screenshot({ path: path.join(OUT, 'queue-active.png') });
-  console.log('Captured: queue-active.png');
+  await queue.screenshot({ path: path.join(OUT, '2-queue.png'), type: 'png' });
+  console.log('Captured: 2-queue.png');
   await queue.close();
 
-  // --- Screenshot 3: Compare results ---
+  // --- Screenshot 3: Compare Results ---
   const savedLists = {
     'elonmusk_followers_1': {
       users: MOCK_FOLLOWERS,
@@ -150,25 +152,22 @@ async function main() {
   await seedStorage(context, extensionId, { savedLists });
 
   const options = await context.newPage();
+  await options.setViewportSize({ width: 1280, height: 800 });
   await options.goto(`chrome-extension://${extensionId}/src/options/options.html`);
   await options.waitForLoadState('domcontentloaded');
   await options.locator('#compareSection').waitFor({ state: 'visible', timeout: 5000 });
-
   await options.selectOption('#followersList', 'elonmusk_followers_1');
   await options.selectOption('#followingList', 'elonmusk_following_1');
   await options.click('#compareBtn');
   await options.waitForTimeout(500);
   await options.locator('#resultsSection').waitFor({ state: 'visible', timeout: 5000 });
   await options.waitForTimeout(300);
-  await options.screenshot({ path: path.join(OUT, 'compare-results.png'), fullPage: true });
-  console.log('Captured: compare-results.png');
+  await options.screenshot({ path: path.join(OUT, '3-compare.png'), type: 'png' });
+  console.log('Captured: 3-compare.png');
   await options.close();
 
   await context.close();
-  console.log(`\nAll screenshots saved to ${OUT}`);
+  console.log(`\nDone! Screenshots saved to ${OUT}`);
 }
 
-main().catch(err => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });
