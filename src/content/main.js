@@ -453,6 +453,8 @@ function createPanel() {
         white-space: nowrap;
         text-align: center;
         min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .xprtr-btn:hover {
         background: rgba(255,255,255,0.08);

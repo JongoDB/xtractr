@@ -116,6 +116,9 @@ body {
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .btn:hover {

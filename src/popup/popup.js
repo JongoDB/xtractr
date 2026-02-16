@@ -6,36 +6,69 @@ const $ = (id) => document.getElementById(id);
 
 // Preset keywords (duplicated from constants since popup can't use ES modules)
 const FILTER_PRESETS = {
-  'IT / Tech': [
+  'Tech': [
     'developer', 'engineer', 'software', 'devops', 'sre', 'cloud',
     'infrastructure', 'sysadmin', 'backend', 'frontend', 'fullstack',
     'full-stack', 'programming', 'coder', 'architect', 'tech lead',
-    'cto', 'cio', 'vp engineering', 'data engineer', 'ml ', 'machine learning',
-    'ai ', 'artificial intelligence', 'deep learning', 'python', 'javascript',
+    'cto', 'cio', 'vp engineering', 'python', 'javascript',
     'typescript', 'golang', 'rust', 'java ', 'kubernetes', 'k8s', 'docker',
     'aws', 'azure', 'gcp', 'terraform', 'linux', 'open source',
     'web dev', 'mobile dev', 'ios dev', 'android dev', 'react', 'node',
     'database', 'sql', 'nosql', 'api', 'microservices',
   ],
-  'Cybersecurity': [
+  'Security': [
     'security', 'infosec', 'cybersecurity', 'cyber', 'pentester',
     'penetration test', 'red team', 'blue team', 'soc ', 'threat',
     'malware', 'vulnerability', 'ciso', 'appsec', 'devsecops',
     'incident response', 'forensic', 'osint', 'bug bounty', 'hacker',
     'offensive sec', 'defensive sec', 'compliance', 'grc',
   ],
-  'Data / Analytics': [
+  'Data': [
     'data scientist', 'data analyst', 'analytics', 'big data',
     'data engineering', 'business intelligence', 'tableau', 'power bi',
-    'statistics', 'machine learning', 'nlp', 'computer vision',
+    'statistics', 'machine learning', 'ml ', 'ai ', 'artificial intelligence',
+    'deep learning', 'nlp', 'computer vision', 'data engineer',
   ],
-  'Design / UX': [
+  'Design': [
     'designer', 'ux ', 'ui ', 'product design', 'ux research',
     'user experience', 'figma', 'interaction design', 'design system',
+    'graphic design', 'creative director', 'visual design', 'brand design',
+  ],
+  'Marketing': [
+    'marketing', 'growth', 'seo', 'sem', 'social media', 'brand',
+    'digital marketing', 'content marketing', 'copywriter', 'ppc',
+    'email marketing', 'demand gen', 'cmo', 'marketing manager',
+    'influencer', 'ad tech', 'growth hacker', 'community manager',
+  ],
+  'Finance': [
+    'finance', 'fintech', 'banking', 'investment', 'trading',
+    'venture capital', 'vc ', 'private equity', 'cfo', 'financial analyst',
+    'portfolio', 'asset management', 'crypto', 'defi', 'blockchain',
+    'accounting', 'cpa', 'hedge fund', 'wealth management',
+  ],
+  'Healthcare': [
+    'healthcare', 'medical', 'physician', 'nurse', 'biotech', 'pharma',
+    'clinical', 'health tech', 'telemedicine', 'public health',
+    'hospital', 'doctor', 'surgeon', 'mental health', 'therapeutics',
+  ],
+  'Legal': [
+    'lawyer', 'attorney', 'legal', 'law firm', 'paralegal', 'litigation',
+    'corporate counsel', 'ip law', 'patent', 'compliance', 'regulatory',
+    'legal tech', 'contract', 'general counsel', 'law school',
+  ],
+  'Education': [
+    'educator', 'teacher', 'professor', 'academic', 'university',
+    'edtech', 'learning', 'curriculum', 'school', 'higher education',
+    'research', 'stem education', 'instructional design', 'dean',
+  ],
+  'Media': [
+    'journalist', 'reporter', 'media', 'news', 'editor', 'publisher',
+    'content creator', 'podcaster', 'writer', 'author', 'broadcaster',
+    'filmmaker', 'producer', 'press', 'correspondent',
   ],
 };
 
-let activePresets = new Set(['IT / Tech']);
+let activePresets = new Set();
 let filterDebounceTimer = null;
 
 // ---- Load state ----
@@ -309,7 +342,21 @@ $('jsonBtn').addEventListener('click', async () => {
 });
 
 $('saveBtn').addEventListener('click', async () => {
-  await chrome.runtime.sendMessage({ type: 'XPRTR_SAVE_LIST' });
+  $('saveBtn').disabled = true;
+  const result = await chrome.runtime.sendMessage({ type: 'XPRTR_SAVE_LIST' });
+  if (result?.ok) {
+    $('saveBtn').textContent = 'Saved!';
+    setTimeout(() => {
+      $('saveBtn').textContent = 'Save List';
+      $('saveBtn').disabled = false;
+    }, 1500);
+  } else {
+    $('saveBtn').textContent = result?.error || 'Error';
+    setTimeout(() => {
+      $('saveBtn').textContent = 'Save List';
+      $('saveBtn').disabled = false;
+    }, 1500);
+  }
 });
 
 $('clearBtn').addEventListener('click', async () => {
