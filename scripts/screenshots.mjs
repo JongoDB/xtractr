@@ -66,6 +66,7 @@ async function main() {
 
   const context = await chromium.launchPersistentContext('', {
     headless: false,
+    viewport: { width: 1280, height: 800 },
     args: [
       `--disable-extensions-except=${ROOT}`,
       `--load-extension=${ROOT}`,
@@ -160,7 +161,7 @@ async function main() {
   await options.waitForTimeout(500);
   await options.locator('#resultsSection').waitFor({ state: 'visible', timeout: 5000 });
   await options.waitForTimeout(300);
-  await options.screenshot({ path: path.join(OUT, 'compare-results.png'), fullPage: true });
+  await options.screenshot({ path: path.join(OUT, 'compare-results.png') });
   console.log('Captured: compare-results.png');
   await options.close();
 
