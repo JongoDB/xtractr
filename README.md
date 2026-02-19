@@ -10,7 +10,7 @@ xtractr is a Chrome extension that intercepts Twitter's own GraphQL API calls to
 
 ## Install
 
-Install from the [Chrome Web Store](https://chrome.google.com/webstore) — one click and you're ready to go.
+Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/xtractr-export-x-follower/cpcdhfphkmickbkiagmpilcllklfdonj) — one click and you're ready to go.
 
 ## Features
 
