@@ -267,8 +267,9 @@ window.addEventListener('message', (event) => {
   if (event.source !== window) return;
 
   if (event.data?.type === 'XPRTR_INTERCEPTED') {
-    const { listType, data } = event.data.payload;
-    console.log(`[xtractr] Received intercepted data for ${listType}`);
+    const { listType, data, rawQueryType } = event.data.payload;
+    const isPrimary = /^(Followers|Following)$/i.test(rawQueryType || '');
+    console.log(`[xtractr] Received intercepted data for ${listType} (raw: ${rawQueryType}, primary: ${isPrimary})`);
 
     // Forward to background service worker
     safeSendMessage({
@@ -281,8 +282,10 @@ window.addEventListener('message', (event) => {
         Paginator.updateCount(userCount);
         updatePanel();
       }
-      // Store cursor from background for next pagination
-      if (response?.cursor) {
+      // Only update cursor from primary query types (Followers/Following),
+      // not subtypes (BlueVerifiedFollowers, FollowersYouKnow) whose cursors
+      // are incompatible with the main endpoint
+      if (response?.cursor && isPrimary) {
         Paginator.setCursor(response.cursor);
       }
       // Track pages with no new users to detect end-of-list

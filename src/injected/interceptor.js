@@ -93,11 +93,13 @@
           // Log response structure for debugging
           logResponseStructure(json, listType);
 
-          // Cache for potential resend to content script
-          cachedResponses[listType] = { data: json, url };
+          // Only cache primary query responses (not subtypes like BlueVerifiedFollowers)
+          if (isPrimaryQueryType(rawQueryType)) {
+            cachedResponses[listType] = { data: json, url };
+          }
 
-          console.log('[xtractr] Forwarding response data for', listType);
-          postMsg(MSG_TYPE, { listType, data: json, url });
+          console.log('[xtractr] Forwarding response data for', listType, '(raw:', rawQueryType + ')');
+          postMsg(MSG_TYPE, { listType, data: json, url, rawQueryType });
         }).catch(err => {
           console.warn('[xtractr] Failed to parse response JSON:', err.message);
         });
@@ -147,9 +149,12 @@
             return;
           }
           logResponseStructure(json, listType);
-          cachedResponses[listType] = { data: json, url: xhrUrl };
-          console.log('[xtractr] Forwarding XHR response for', listType);
-          postMsg(MSG_TYPE, { listType, data: json, url: xhrUrl });
+          // Only cache primary query responses (not subtypes like BlueVerifiedFollowers)
+          if (isPrimaryQueryType(rawQueryType)) {
+            cachedResponses[listType] = { data: json, url: xhrUrl };
+          }
+          console.log('[xtractr] Forwarding XHR response for', listType, '(raw:', rawQueryType + ')');
+          postMsg(MSG_TYPE, { listType, data: json, url: xhrUrl, rawQueryType });
         } catch {}
       });
     }
