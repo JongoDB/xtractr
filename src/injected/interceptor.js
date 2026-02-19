@@ -115,11 +115,21 @@
 
   const origXHROpen = XMLHttpRequest.prototype.open;
   const origXHRSend = XMLHttpRequest.prototype.send;
+  const origXHRSetHeader = XMLHttpRequest.prototype.setRequestHeader;
 
   XMLHttpRequest.prototype.open = function (xhrMethod, xhrUrl, ...rest) {
     this._xtractrUrl = xhrUrl;
     this._xtractrMethod = xhrMethod;
+    this._xtractrHeaders = {};
     return origXHROpen.call(this, xhrMethod, xhrUrl, ...rest);
+  };
+
+  // Capture all request headers set by Twitter's JS
+  XMLHttpRequest.prototype.setRequestHeader = function (name, value) {
+    if (this._xtractrHeaders) {
+      this._xtractrHeaders[name.toLowerCase()] = value;
+    }
+    return origXHRSetHeader.call(this, name, value);
   };
 
   XMLHttpRequest.prototype.send = function (...sendArgs) {
@@ -130,9 +140,11 @@
       const rawQueryType = match[2];
       const listType = normalizeListType(rawQueryType);
       const xhrBody = typeof sendArgs[0] === 'string' ? sendArgs[0] : null;
+      const xhrHeaders = this._xtractrHeaders || {};
       console.log(`[xtractr] Intercepted XHR: ${listType} (${rawQueryType}) [${this._xtractrMethod}]`, xhrUrl.slice(0, 150));
+      console.log(`[xtractr] XHR headers captured:`, Object.keys(xhrHeaders).join(', '));
 
-      captureTemplate(listType, xhrUrl, {}, null, this._xtractrMethod || 'GET', xhrBody, match[1], rawQueryType);
+      captureTemplate(listType, xhrUrl, { headers: xhrHeaders }, null, this._xtractrMethod || 'GET', xhrBody, match[1], rawQueryType);
 
       this.addEventListener('load', () => {
         try {
@@ -313,6 +325,7 @@
 
       requestTemplates[listType] = {
         baseUrl: parsedUrl.origin + parsedUrl.pathname,
+        rawUrl: url, // preserve original URL with exact encoding
         variables,
         features: featuresStr || '',
         fieldToggles: fieldTogglesStr || '',
@@ -369,6 +382,37 @@
 
   // ---- Active paginator: fetch a page on demand ----
 
+  function buildGetUrl(template, variables) {
+    // Prefer modifying the raw original URL to preserve exact encoding of features etc.
+    if (template.rawUrl && template.rawUrl.includes('variables=')) {
+      const newVarsEncoded = encodeURIComponent(JSON.stringify(variables));
+      return template.rawUrl.replace(/variables=[^&]+/, `variables=${newVarsEncoded}`);
+    }
+    // Fallback: reconstruct from parts
+    const params = new URLSearchParams();
+    params.set('variables', JSON.stringify(variables));
+    if (template.features) params.set('features', template.features);
+    if (template.fieldToggles) params.set('fieldToggles', template.fieldToggles);
+    return `${template.baseUrl}?${params.toString()}`;
+  }
+
+  function buildPostInit(template, variables, headers) {
+    const body = { variables };
+    if (template.features) {
+      try { body.features = JSON.parse(template.features); } catch { body.features = template.features; }
+    }
+    if (template.fieldToggles) {
+      try { body.fieldToggles = JSON.parse(template.fieldToggles); } catch { body.fieldToggles = template.fieldToggles; }
+    }
+    headers['content-type'] = 'application/json';
+    return {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+      body: JSON.stringify(body),
+    };
+  }
+
   async function fetchPage(listType, cursor) {
     const template = requestTemplates[listType];
     if (!template) {
@@ -394,30 +438,11 @@
       let fetchInit;
 
       if (usePost) {
-        // POST: variables in JSON body
         fetchUrl = template.baseUrl;
-        const body = { variables };
-        if (template.features) {
-          try { body.features = JSON.parse(template.features); } catch { body.features = template.features; }
-        }
-        if (template.fieldToggles) {
-          try { body.fieldToggles = JSON.parse(template.fieldToggles); } catch { body.fieldToggles = template.fieldToggles; }
-        }
-        headers['content-type'] = 'application/json';
-        fetchInit = {
-          method: 'POST',
-          headers,
-          credentials: 'include',
-          body: JSON.stringify(body),
-        };
+        fetchInit = buildPostInit(template, variables, headers);
         console.log(`[xtractr] Fetching page [POST]: cursor=${cursor ? cursor.slice(0, 20) + '...' : 'null'}`);
       } else {
-        // GET: variables in URL params
-        const params = new URLSearchParams();
-        params.set('variables', JSON.stringify(variables));
-        if (template.features) params.set('features', template.features);
-        if (template.fieldToggles) params.set('fieldToggles', template.fieldToggles);
-        fetchUrl = `${template.baseUrl}?${params.toString()}`;
+        fetchUrl = buildGetUrl(template, variables);
         fetchInit = {
           method: 'GET',
           headers,
@@ -426,8 +451,18 @@
         console.log(`[xtractr] Fetching page [GET]: cursor=${cursor ? cursor.slice(0, 20) + '...' : 'null'}`);
       }
 
-      const response = await originalFetch(fetchUrl, fetchInit);
+      let response = await originalFetch(fetchUrl, fetchInit);
       console.log(`[xtractr] Fetch response: ${response.status}`);
+
+      // If GET returns 404, retry as POST — some endpoints require POST for cursor-based queries
+      if (response.status === 404 && !usePost) {
+        console.log('[xtractr] GET returned 404, retrying as POST...');
+        const postHeaders = { ...template.headers };
+        postHeaders['x-csrf-token'] = getCsrfToken();
+        const postInit = buildPostInit(template, variables, postHeaders);
+        response = await originalFetch(template.baseUrl, postInit);
+        console.log(`[xtractr] POST retry response: ${response.status}`);
+      }
 
       if (response.status === 429) {
         const retryAfter = response.headers.get('retry-after');
@@ -473,7 +508,9 @@
       postMsg(FETCH_RESULT, { requestId, ...result });
 
       if (result.data) {
-        postMsg(MSG_TYPE, { listType, data: result.data, url: location.href });
+        // Paginator always uses primary templates, so derive the primary query type
+        const primaryQueryType = listType === 'following' ? 'Following' : 'Followers';
+        postMsg(MSG_TYPE, { listType, data: result.data, url: location.href, rawQueryType: primaryQueryType });
       }
       if (result.rateLimited) {
         postMsg(RATE_LIMIT_TYPE, { listType, retryAfter: result.retryAfter });
