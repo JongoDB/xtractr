@@ -4,9 +4,9 @@
 
 <h1 align="center">xtractr</h1>
 
-<p align="center">Export X/Twitter followers and following lists to CSV or JSON. No API key needed.</p>
+<p align="center">Download any X/Twitter followers or following list with one click. Filter, compare, and export — all without leaving your browser.</p>
 
-xtractr is a Chrome extension that intercepts Twitter's own GraphQL API calls to capture follower/following data as you browse. Everything runs locally in your browser — no external servers, no subscriptions, no API tokens required.
+xtractr is a Chrome extension that captures follower and following data as you browse X/Twitter. Just visit any profile's followers or following page and it starts collecting automatically. Everything runs locally in your browser — no external servers, no subscriptions, no API tokens required.
 
 ## Install
 

@@ -65,11 +65,12 @@
     try {
       if (match) {
         const graphqlHash = match[1];
-        const listType = normalizeListType(match[2]);
-        console.log(`[xtractr] Intercepted fetch: ${listType} [${method}] hash=${graphqlHash}`, url.slice(0, 150));
+        const rawQueryType = match[2];
+        const listType = normalizeListType(rawQueryType);
+        console.log(`[xtractr] Intercepted fetch: ${listType} (${rawQueryType}) [${method}] hash=${graphqlHash}`, url.slice(0, 150));
 
         // Capture request template for replaying
-        captureTemplate(listType, url, initObj, requestObj, method, bodyStr, graphqlHash);
+        captureTemplate(listType, url, initObj, requestObj, method, bodyStr, graphqlHash, rawQueryType);
 
         if (response.status === 429) {
           console.log('[xtractr] Rate limited (429)');
@@ -124,11 +125,12 @@
     const match = xhrUrl.match(GRAPHQL_PATTERN);
 
     if (match) {
-      const listType = normalizeListType(match[2]);
+      const rawQueryType = match[2];
+      const listType = normalizeListType(rawQueryType);
       const xhrBody = typeof sendArgs[0] === 'string' ? sendArgs[0] : null;
-      console.log(`[xtractr] Intercepted XHR: ${listType} [${this._xtractrMethod}]`, xhrUrl.slice(0, 150));
+      console.log(`[xtractr] Intercepted XHR: ${listType} (${rawQueryType}) [${this._xtractrMethod}]`, xhrUrl.slice(0, 150));
 
-      captureTemplate(listType, xhrUrl, {}, null, this._xtractrMethod || 'GET', xhrBody, match[1]);
+      captureTemplate(listType, xhrUrl, {}, null, this._xtractrMethod || 'GET', xhrBody, match[1], rawQueryType);
 
       this.addEventListener('load', () => {
         try {
@@ -161,6 +163,13 @@
     const lower = raw.toLowerCase();
     if (lower.includes('following')) return 'following';
     return 'followers';
+  }
+
+  // Primary query types whose templates should be preferred for pagination.
+  // Subtypes (FollowersYouKnow, BlueVerifiedFollowers, etc.) return smaller
+  // subsets and should not overwrite the main template.
+  function isPrimaryQueryType(raw) {
+    return /^(Followers|Following)$/i.test(raw);
   }
 
   function postMsg(type, payload) {
@@ -219,7 +228,13 @@
 
   // ---- Capture request template ----
 
-  function captureTemplate(listType, url, init, requestObj, method, bodyStr, graphqlHash) {
+  function captureTemplate(listType, url, init, requestObj, method, bodyStr, graphqlHash, rawQueryType) {
+    // Don't let subtype queries overwrite the primary template
+    if (requestTemplates[listType] && !isPrimaryQueryType(rawQueryType)) {
+      console.log('[xtractr] Keeping existing template for', listType, '- skipping subtype:', rawQueryType);
+      return;
+    }
+
     try {
       const parsedUrl = new URL(url, location.origin);
 

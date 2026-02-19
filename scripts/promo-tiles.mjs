@@ -225,7 +225,7 @@ function tileHTML(width, height) {
         <img class="logo-img" src="${iconDataUri}" alt="xtractr">
         <span class="title">xtractr</span>
       </div>
-      <div class="tagline">Export, filter, and analyze your X/Twitter followers and following lists</div>
+      <div class="tagline">Export, filter, and analyze any X/Twitter followers or following list</div>
       <div class="features">
         <span class="chip">Bulk Export</span>
         <span class="chip">Smart Filters</span>

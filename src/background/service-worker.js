@@ -104,6 +104,14 @@ function parseGraphQLResponse(json) {
             if (user) users.push(user);
           }
         }
+        // Handle TimelineReplaceEntry for cursor updates (used in module-based pagination)
+        if (!cursor && instruction.type === 'TimelineReplaceEntry' && instruction.entry) {
+          const eid = instruction.entry.entryId || '';
+          if (eid.startsWith('cursor-bottom-') || eid.startsWith('cursor-bottom|')) {
+            cursor = extractCursorValue(instruction.entry);
+            console.log(`[xtractr-bg] Cursor from TimelineReplaceEntry: ${cursor ? cursor.slice(0, 20) + '...' : 'null'}`);
+          }
+        }
         // Fallback cursor extraction from any instruction's entries
         if (!cursor && Array.isArray(instruction.entries)) {
           for (const entry of instruction.entries) {

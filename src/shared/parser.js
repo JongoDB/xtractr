@@ -17,14 +17,11 @@
  */
 export function parseGraphQLResponse(json) {
   const entries = extractEntries(json);
-  if (!entries || !entries.length) {
-    return { users: [], cursor: null };
-  }
 
   const users = [];
   let cursor = null;
 
-  for (const entry of entries) {
+  for (const entry of (entries || [])) {
     const entryId = entry.entryId || '';
 
     if (entryId.startsWith('user-')) {
@@ -44,6 +41,41 @@ export function parseGraphQLResponse(json) {
       }
     }
   }
+
+  // Process TimelineAddToModule and TimelineReplaceEntry instructions
+  // (used in module-based pagination, e.g. followers endpoint).
+  try {
+    const timeline =
+      json?.data?.user?.result?.timeline?.timeline ||
+      json?.data?.user?.result?.timeline;
+
+    if (timeline?.instructions) {
+      for (const instruction of timeline.instructions) {
+        if (instruction.type === 'TimelineAddToModule' && Array.isArray(instruction.moduleItems)) {
+          for (const item of instruction.moduleItems) {
+            const user = extractUserFromEntry(item) || extractUserFromEntry(item?.item);
+            if (user) users.push(user);
+          }
+        }
+        // Cursor updates in module-based pagination arrive via TimelineReplaceEntry
+        if (!cursor && instruction.type === 'TimelineReplaceEntry' && instruction.entry) {
+          const eid = instruction.entry.entryId || '';
+          if (eid.startsWith('cursor-bottom-') || eid.startsWith('cursor-bottom|')) {
+            cursor = extractCursorValue(instruction.entry);
+          }
+        }
+        // Fallback cursor extraction from any instruction's entries
+        if (!cursor && Array.isArray(instruction.entries)) {
+          for (const entry of instruction.entries) {
+            const eid = entry.entryId || '';
+            if (eid.startsWith('cursor-bottom-') || eid.startsWith('cursor-bottom|')) {
+              cursor = extractCursorValue(entry);
+            }
+          }
+        }
+      }
+    }
+  } catch { /* fall through */ }
 
   return { users, cursor };
 }
