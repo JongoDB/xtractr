@@ -57,6 +57,68 @@ Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/xtr
 3. Click **Open Profile & Follow** (opens their X profile in a new tab) or **Skip**
 4. Use keyboard shortcuts: `F`/`Enter` = follow, `S`/`→` = skip
 
+## Auto-follow (Playwright)
+
+xtractr includes a Playwright script that automates following profiles from an exported JSON file. It launches your real Chrome browser with your existing session — no API keys, no tokens, no separate login.
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- [Google Chrome](https://www.google.com/chrome/) installed and logged in to X/Twitter
+
+### Setup
+
+```bash
+npm install
+npx playwright install chrome
+```
+
+### Usage
+
+1. Export a filtered list from xtractr as JSON (or create your own — see format below)
+2. Make sure you're logged in to X in Chrome
+3. Run the script:
+
+```bash
+node scripts/auto-follow.mjs path/to/your-list.json
+```
+
+Chrome opens with a copy of your profile. After 15 seconds it begins visiting each profile and clicking Follow. Already-followed accounts are skipped automatically.
+
+### Input format
+
+The JSON file should be an array of objects with a `username` field (xtractr's default export format):
+
+```json
+[
+  { "username": "addyosmani" },
+  { "username": "naval" },
+  { "username": "paulg" }
+]
+```
+
+A flat array of username strings also works:
+
+```json
+["addyosmani", "naval", "paulg"]
+```
+
+### How it works
+
+- Copies your Chrome profile to a temp directory so Playwright doesn't conflict with a running Chrome instance
+- Hides automation markers (`navigator.webdriver`, `--enable-automation`) so X doesn't block the session
+- Visits `x.com/<username>` for each profile and clicks the Follow button
+- Waits 10–15 seconds (randomized) between follows to stay under rate limits
+- Skips profiles where the button says "Following", "Pending", or isn't found
+- Logs progress to the terminal: ✅ followed, ⏭️ skipped, ❌ errored
+
+### Tips
+
+- **Don't interact with the automated Chrome window** while it's running — let it do its thing
+- If X starts showing CAPTCHAs or rate-limit warnings, stop the script and wait a few hours before resuming
+- For large lists (500+), consider splitting into batches across multiple sessions
+- Cross-platform: works on macOS, Windows, and Linux (auto-detects Chrome profile location)
+
 ## Privacy
 
 xtractr does not collect, transmit, or store any data outside your browser. All captured data stays in Chrome's local storage on your machine. The extension only communicates with x.com/twitter.com — the same requests your browser already makes.

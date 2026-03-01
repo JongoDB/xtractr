@@ -3,7 +3,8 @@
   "version": "1.1.0",
   "main": "index.js",
   "scripts": {
-    "test": "npx playwright test"
+    "test": "npx playwright test",
+    "follow": "node scripts/auto-follow.mjs"
   },
   "keywords": [],
   "author": "",
