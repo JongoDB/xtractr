@@ -495,7 +495,8 @@
     .screenshots-section { padding: 80px 0; }
     .screenshots-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
       gap: 16px;
       margin-top: 40px;
     }
@@ -515,6 +516,20 @@
     .screenshot-item img {
       width: 100%;
       display: block;
+      object-fit: cover;
+      object-position: top left;
+    }
+    /* Popup screenshots: crop to the left 25% where the actual popup lives */
+    .screenshot-item.popup img {
+      aspect-ratio: 3 / 4;
+      object-position: top left;
+      object-fit: cover;
+    }
+    /* Full-page screenshots: crop to center content area */
+    .screenshot-item.fullpage img {
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      object-position: center top;
     }
     .screenshot-label {
       padding: 14px 16px;
@@ -806,17 +821,21 @@
       <p class="section-label">In action</p>
       <h2 class="section-title">See it at work</h2>
       <div class="screenshots-grid">
-        <div class="screenshot-item">
+        <div class="screenshot-item popup">
           <img src="screenshots/popup-active.png" alt="Active capture session" loading="lazy">
-          <div class="screenshot-label">Capturing followers in real time</div>
+          <div class="screenshot-label">Capture session popup</div>
         </div>
-        <div class="screenshot-item">
+        <div class="screenshot-item popup">
           <img src="screenshots/popup-filters.png" alt="Filter panel" loading="lazy">
-          <div class="screenshot-label">Advanced filtering with relevance scoring</div>
+          <div class="screenshot-label">Filtering with relevance scoring</div>
         </div>
-        <div class="screenshot-item">
+        <div class="screenshot-item fullpage">
+          <img src="screenshots/queue-active.png" alt="Follow queue" loading="lazy">
+          <div class="screenshot-label">Follow queue with profile cards</div>
+        </div>
+        <div class="screenshot-item fullpage">
           <img src="screenshots/compare-results.png" alt="List comparison" loading="lazy">
-          <div class="screenshot-label">Comparing saved lists</div>
+          <div class="screenshot-label">List comparison results</div>
         </div>
       </div>
     </div>
