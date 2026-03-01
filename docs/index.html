@@ -3,64 +3,884 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>xtractr - Export X/Twitter Followers & Following</title>
+  <title>xtractr — Extract, Filter & Auto-Follow on X/Twitter</title>
+  <meta name="description" content="Chrome extension that exports X/Twitter followers and following lists. Filter by relevance, compare lists, and auto-follow with Playwright. No API key needed.">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-primary: #08080c;
+      --bg-secondary: #0f0f16;
+      --bg-card: #12121c;
+      --bg-card-hover: #181826;
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --text-primary: #e8e8ed;
+      --text-secondary: #8a8a9a;
+      --text-muted: #55556a;
+      --accent: #1d9bf0;
+      --accent-glow: rgba(29, 155, 240, 0.15);
+      --accent-subtle: rgba(29, 155, 240, 0.08);
+      --green: #22c55e;
+      --green-glow: rgba(34, 197, 94, 0.15);
+      --purple: #a78bfa;
+      --purple-glow: rgba(167, 139, 250, 0.12);
+      --orange: #f59e0b;
+      --orange-glow: rgba(245, 158, 11, 0.12);
+      --font-display: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1a1a1a; background: #fafafa; line-height: 1.7; }
-    .container { max-width: 720px; margin: 0 auto; padding: 48px 24px; }
-    h1 { font-size: 32px; margin-bottom: 8px; }
-    .tagline { font-size: 18px; color: #555; margin-bottom: 32px; }
-    h2 { font-size: 20px; margin: 32px 0 12px; }
-    p, li { font-size: 16px; margin-bottom: 12px; }
-    ul { padding-left: 24px; margin-bottom: 16px; }
-    a { color: #1d9bf0; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .links { margin-top: 36px; padding-top: 24px; border-top: 1px solid #ddd; }
-    .links a { display: inline-block; margin-right: 24px; font-size: 15px; }
-    .screenshots { margin: 24px 0; }
-    .screenshots img { max-width: 100%; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px; }
-    .screenshot-caption { font-size: 14px; color: #666; margin-bottom: 24px; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-display);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Ambient background ── */
+    .ambient {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .ambient::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: -10%;
+      width: 60%;
+      height: 80%;
+      background: radial-gradient(ellipse, rgba(29, 155, 240, 0.06) 0%, transparent 70%);
+      animation: drift 20s ease-in-out infinite;
+    }
+    .ambient::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      right: -15%;
+      width: 50%;
+      height: 70%;
+      background: radial-gradient(ellipse, rgba(167, 139, 250, 0.04) 0%, transparent 70%);
+      animation: drift 25s ease-in-out infinite reverse;
+    }
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(40px, -30px); }
+    }
+
+    /* ── Noise overlay ── */
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 256px;
+    }
+
+    /* ── Layout ── */
+    .wrapper {
+      position: relative;
+      z-index: 2;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 28px;
+      background: rgba(8, 8, 12, 0.8);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    nav .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--text-primary);
+    }
+    nav .brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    nav .brand span {
+      font-weight: 700;
+      font-size: 17px;
+      letter-spacing: -0.02em;
+    }
+    nav .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+    }
+    nav .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    nav .nav-links a:hover { color: var(--text-primary); }
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-display);
+      border: none;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .btn-nav:hover { background: #1a8cd8; transform: translateY(-1px); }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 160px 0 100px;
+      text-align: center;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px 6px 8px;
+      background: var(--accent-subtle);
+      border: 1px solid rgba(29, 155, 240, 0.15);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s ease-out both;
+    }
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .hero h1 {
+      font-size: clamp(44px, 7vw, 72px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.05;
+      margin-bottom: 20px;
+      animation: fadeUp 0.6s ease-out 0.1s both;
+    }
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero .subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto 36px;
+      line-height: 1.7;
+      animation: fadeUp 0.6s ease-out 0.2s both;
+    }
+    .hero-buttons {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      animation: fadeUp 0.6s ease-out 0.3s both;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 26px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font-display);
+      border: none;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.25s;
+      box-shadow: 0 0 20px var(--accent-glow), 0 1px 3px rgba(0,0,0,0.3);
+    }
+    .btn-primary:hover {
+      background: #1a8cd8;
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.4);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 26px;
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: var(--font-display);
+      border: 1px solid var(--border-hover);
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all 0.25s;
+    }
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+    .btn-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Features grid ── */
+    .features { padding: 80px 0; }
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 38px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .feature-card:hover {
+      border-color: var(--border-hover);
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+    }
+    .feature-card:hover::before { opacity: 1; }
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      font-size: 20px;
+    }
+    .feature-icon.blue  { background: var(--accent-subtle); border: 1px solid rgba(29,155,240,0.12); }
+    .feature-icon.green { background: var(--green-glow); border: 1px solid rgba(34,197,94,0.12); }
+    .feature-icon.purple { background: var(--purple-glow); border: 1px solid rgba(167,139,250,0.12); }
+    .feature-icon.orange { background: var(--orange-glow); border: 1px solid rgba(245,158,11,0.12); }
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    /* ── Spotlight (auto-follow) ── */
+    .spotlight {
+      padding: 80px 0;
+    }
+    .spotlight-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      position: relative;
+    }
+    .spotlight-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+      opacity: 0.5;
+    }
+    .spotlight-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+    }
+    .spotlight-content {
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .spotlight-new {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--green-glow);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      width: fit-content;
+      margin-bottom: 18px;
+    }
+    .spotlight-content h2 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 14px;
+    }
+    .spotlight-content p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .spotlight-steps {
+      list-style: none;
+      margin-top: 10px;
+    }
+    .spotlight-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .spotlight-steps .step-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--green);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .spotlight-terminal {
+      background: #0a0a10;
+      padding: 48px 36px;
+      display: flex;
+      align-items: center;
+      border-left: 1px solid var(--border);
+    }
+    .terminal-window {
+      width: 100%;
+      background: #111118;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .terminal-dot.red { background: #ff5f57; }
+    .terminal-dot.yellow { background: #febc2e; }
+    .terminal-dot.green { background: #28c840; }
+    .terminal-body {
+      padding: 18px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.9;
+      color: var(--text-secondary);
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .terminal-body .cmd { color: var(--green); }
+    .terminal-body .dim { color: var(--text-muted); }
+    .terminal-body .ok { color: var(--green); }
+    .terminal-body .skip { color: var(--orange); }
+    .terminal-body .info { color: var(--accent); }
+
+    /* ── Screenshots ── */
+    .screenshots-section { padding: 80px 0; }
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 40px;
+    }
+    .screenshot-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      transition: all 0.3s;
+    }
+    .screenshot-item:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+    }
+    .screenshot-item img {
+      width: 100%;
+      display: block;
+    }
+    .screenshot-label {
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── How it works ── */
+    .how-it-works { padding: 80px 0; }
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+      position: relative;
+    }
+    .steps-row::before {
+      content: '';
+      position: absolute;
+      top: 28px;
+      left: 15%;
+      right: 15%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-hover), var(--border-hover), transparent);
+    }
+    .step-item {
+      text-align: center;
+      position: relative;
+    }
+    .step-number {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+    .step-item h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .step-item p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 260px;
+      margin: 0 auto;
+    }
+
+    /* ── CTA ── */
+    .cta {
+      padding: 80px 0 100px;
+      text-align: center;
+    }
+    .cta-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 64px 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cta-box::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.4;
+    }
+    .cta-box h2 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+    .cta-box p {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+    }
+    footer .inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    footer .copyright {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    footer .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+    footer .footer-links a {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    footer .footer-links a:hover { color: var(--text-primary); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+      .spotlight-inner { grid-template-columns: 1fr; }
+      .spotlight-terminal {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        padding: 24px 20px;
+      }
+      .spotlight-content { padding: 32px 24px; }
+      .screenshots-grid { grid-template-columns: 1fr; }
+      .steps-row { grid-template-columns: 1fr; gap: 36px; }
+      .steps-row::before { display: none; }
+      nav .nav-links a.hide-mobile { display: none; }
+      .hero { padding: 130px 0 60px; }
+      .cta-box { padding: 48px 24px; }
+      footer .inner { flex-direction: column; gap: 12px; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:8px;">
-      <img src="logo.png" alt="xtractr logo" width="64" height="64" style="border-radius:12px;">
-      <h1>xtractr</h1>
+
+<div class="ambient"></div>
+<div class="noise"></div>
+
+<div class="wrapper">
+  <!-- Nav -->
+  <nav>
+    <div class="inner">
+      <a href="#" class="brand">
+        <img src="logo.png" alt="xtractr">
+        <span>xtractr</span>
+      </a>
+      <div class="nav-links">
+        <a href="#features" class="hide-mobile">Features</a>
+        <a href="#auto-follow" class="hide-mobile">Auto-Follow</a>
+        <a href="https://github.com/JongoDB/xtractr">GitHub</a>
+        <a href="https://chromewebstore.google.com/detail/xtractr-export-x-follower/cpcdhfphkmickbkiagmpilcllklfdonj" class="btn-nav">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 3 20 12 6 21 6 3"/></svg>
+          Install
+        </a>
+      </div>
     </div>
-    <p class="tagline">Export X/Twitter followers and following lists to CSV or JSON. No API key needed.</p>
+  </nav>
 
-    <h2>What it does</h2>
-    <p>xtractr is a Chrome extension that captures follower and following data as you browse X/Twitter. It intercepts the same API calls your browser already makes — no external servers, no API tokens, no subscriptions.</p>
-
-    <h2>Features</h2>
-    <ul>
-      <li>Automatic capture as you browse followers/following pages</li>
-      <li>Fetch All to paginate through entire lists with rate-limit handling</li>
-      <li>Export to CSV or JSON with timestamped filenames</li>
-      <li>Advanced filtering with keyword stemming, follower ranges, and relevance scoring</li>
-      <li>Industry presets for IT/Tech, Cybersecurity, Data/Analytics, and Design/UX</li>
-      <li>Follow queue to review and follow filtered users one at a time</li>
-      <li>List comparison to find mutuals and non-followers</li>
-      <li>Fully local — all data stays in your browser</li>
-    </ul>
-
-    <h2>Screenshots</h2>
-    <div class="screenshots">
-      <img src="screenshots/popup-active.png" alt="xtractr popup showing an active capture session">
-      <p class="screenshot-caption">Popup showing an active capture session with 10 users captured</p>
-
-      <img src="screenshots/queue-active.png" alt="Follow queue with user card">
-      <p class="screenshot-caption">Follow queue page for reviewing and following users one at a time</p>
-
-      <img src="screenshots/compare-results.png" alt="List comparison results">
-      <p class="screenshot-caption">Compare saved lists to find mutuals and non-followers</p>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        v1.1 — Now with auto-follow automation
+      </div>
+      <h1>Extract. Filter.<br><span class="gradient">Auto-Follow.</span></h1>
+      <p class="subtitle">Chrome extension that captures X/Twitter follower data, filters by relevance, and bulk-follows from your exports — all without API keys.</p>
+      <div class="hero-buttons">
+        <a href="https://chromewebstore.google.com/detail/xtractr-export-x-follower/cpcdhfphkmickbkiagmpilcllklfdonj" class="btn-primary">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+          Add to Chrome
+        </a>
+        <a href="https://github.com/JongoDB/xtractr" class="btn-secondary">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View Source
+        </a>
+      </div>
     </div>
+  </section>
 
-    <div class="links">
-      <a href="https://github.com/JongoDB/xtractr">GitHub</a>
-      <a href="privacy.html">Privacy Policy</a>
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <p class="section-label">Features</p>
+      <h2 class="section-title">Everything you need to manage<br>followers at scale</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon blue">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1d9bf0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
+          <h3>One-click capture & export</h3>
+          <p>Visit any profile's followers or following page and xtractr starts collecting automatically. Paginate through entire lists with built-in rate-limit handling, then export to CSV or JSON.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon purple">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          </div>
+          <h3>Advanced filtering & scoring</h3>
+          <p>Filter by keywords with stemming, follower count ranges, verified status, and bio presence. Each user gets a 0–100 relevance score. Industry presets for IT, Cybersecurity, Data, and Design.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon orange">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>List comparison</h3>
+          <p>Save multiple lists and compare them side by side. Find mutuals, people who don't follow back, and accounts you don't follow back — then export or act on the results.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon green">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          </div>
+          <h3>Follow queue</h3>
+          <p>Send filtered users to a review queue. See profile cards with bios, follower counts, and relevance scores. Open profiles and follow with keyboard shortcuts — F to follow, S to skip.</p>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
+
+  <!-- Auto-follow spotlight -->
+  <section class="spotlight" id="auto-follow">
+    <div class="container">
+      <div class="spotlight-card">
+        <div class="spotlight-inner">
+          <div class="spotlight-content">
+            <div class="spotlight-new">New in v1.1</div>
+            <h2>Automated bulk following<br>with Playwright</h2>
+            <p>Export a filtered list from xtractr, then run the auto-follow script. It drives your real Chrome browser — same cookies, same session. X sees normal browsing, not an API bot.</p>
+            <ol class="spotlight-steps">
+              <li>
+                <span class="step-num">1</span>
+                <span>Export your filtered list as JSON from the xtractr popup</span>
+              </li>
+              <li>
+                <span class="step-num">2</span>
+                <span>Run <code style="color:var(--green);font-family:var(--font-mono);font-size:13px;">node scripts/auto-follow.mjs list.json</code></span>
+              </li>
+              <li>
+                <span class="step-num">3</span>
+                <span>Chrome opens with your session — follows happen automatically at a human pace</span>
+              </li>
+            </ol>
+          </div>
+          <div class="spotlight-terminal">
+            <div class="terminal-window">
+              <div class="terminal-bar">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+              </div>
+              <div class="terminal-body"><span class="cmd">$</span> <span class="info">node scripts/auto-follow.mjs users.json</span>
+<span class="dim">Loaded 756 profiles to follow.</span>
+<span class="dim">Copying Chrome profile...</span>
+<span class="dim">Launching Chrome...</span>
+
+<span class="dim">[1/756]</span> <span class="skip">⏭️  iximiuz — already following</span>
+<span class="dim">[2/756]</span> <span class="skip">⏭️  wesmckinn — already following</span>
+<span class="dim">[3/756]</span> <span class="ok">✅ addyosmani — followed</span>
+<span class="dim">[4/756]</span> <span class="ok">✅ bentossell — followed</span>
+<span class="dim">[5/756]</span> <span class="ok">✅ naval — followed</span>
+<span class="dim">[6/756]</span> <span class="skip">⏭️  paulg — already following</span>
+<span class="dim">[7/756]</span> <span class="ok">✅ raaborozdin — followed</span>
+
+<span class="dim">Done!</span> <span class="ok">✅ 612 followed</span> <span class="dim">|</span> <span class="skip">⏭️ 139 skipped</span> <span class="dim">|</span> <span class="dim">❌ 5 failed</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshots -->
+  <section class="screenshots-section" id="screenshots">
+    <div class="container">
+      <p class="section-label">In action</p>
+      <h2 class="section-title">See it at work</h2>
+      <div class="screenshots-grid">
+        <div class="screenshot-item">
+          <img src="screenshots/popup-active.png" alt="Active capture session" loading="lazy">
+          <div class="screenshot-label">Capturing followers in real time</div>
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/popup-filters.png" alt="Filter panel" loading="lazy">
+          <div class="screenshot-label">Advanced filtering with relevance scoring</div>
+        </div>
+        <div class="screenshot-item">
+          <img src="screenshots/compare-results.png" alt="List comparison" loading="lazy">
+          <div class="screenshot-label">Comparing saved lists</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works">
+    <div class="container">
+      <p class="section-label">How it works</p>
+      <h2 class="section-title">Three steps from browse to bulk-follow</h2>
+      <div class="steps-row">
+        <div class="step-item">
+          <div class="step-number">01</div>
+          <h3>Capture</h3>
+          <p>Browse any followers or following page on X. xtractr intercepts the data your browser already loads — no extra API calls.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">02</div>
+          <h3>Filter & export</h3>
+          <p>Apply keyword filters, industry presets, and relevance scoring. Export the filtered list as JSON for automation or CSV for analysis.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-number">03</div>
+          <h3>Auto-follow</h3>
+          <p>Run the Playwright script with your export. It opens Chrome with your session and follows each profile at a human pace.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-box">
+        <h2>Start extracting in seconds</h2>
+        <p>Free, open source, fully local. No API keys, no subscriptions.</p>
+        <div class="cta-buttons">
+          <a href="https://chromewebstore.google.com/detail/xtractr-export-x-follower/cpcdhfphkmickbkiagmpilcllklfdonj" class="btn-primary">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="21.17" y1="8" x2="12" y2="8"/><line x1="3.95" y1="6.06" x2="8.54" y2="14"/><line x1="10.88" y1="21.94" x2="15.46" y2="14"/></svg>
+            Add to Chrome — Free
+          </a>
+          <a href="https://github.com/JongoDB/xtractr" class="btn-secondary">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            View on GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="inner">
+        <span class="copyright">xtractr — open source, MIT license</span>
+        <div class="footer-links">
+          <a href="privacy.html">Privacy</a>
+          <a href="https://github.com/JongoDB/xtractr">GitHub</a>
+          <a href="https://github.com/JongoDB/xtractr/issues">Report Issue</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+
 </body>
 </html>
